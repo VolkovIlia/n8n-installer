@@ -166,6 +166,23 @@ if is_profile_active "postiz"; then
   echo "Internal Access (e.g., from n8n): http://postiz:5000"
 fi
 
+if is_profile_active "postgresus"; then
+  echo
+  echo "================================= Postgresus =========================="
+  echo
+  echo "Host: ${POSTGRESUS_HOSTNAME:-<hostname_not_set>}"
+  echo "UI (external via Caddy): https://${POSTGRESUS_HOSTNAME:-<hostname_not_set>}"
+  echo "UI (internal): http://postgresus:4005"
+  echo "------ Backup Target (internal PostgreSQL) ------"
+  echo "PG version: ${POSTGRES_VERSION:-17}"
+  echo "Host: ${POSTGRES_HOST:-postgres}"
+  echo "Port: ${POSTGRES_PORT:-5432}"
+  echo "Username: ${POSTGRES_USER:-postgres}"
+  echo "Password: ${POSTGRES_PASSWORD:-<not_set_in_env>}"
+  echo "DB name: ${POSTGRES_DB:-postgres}"
+  echo "Use HTTPS: false"
+fi
+
 if is_profile_active "ragapp"; then
   echo
   echo "================================= RAGApp =============================="
@@ -237,6 +254,19 @@ if is_profile_active "gotenberg"; then
   echo "  URL to PDF: POST /forms/chromium/convert/url"
   echo "  Markdown to PDF: POST /forms/chromium/convert/markdown"
   echo "  Office to PDF: POST /forms/libreoffice/convert"
+fi
+
+if is_profile_active "paddleocr"; then
+  echo
+  echo "================================= PaddleOCR ==========================="
+  echo
+  echo "Host: ${PADDLEOCR_HOSTNAME:-<hostname_not_set>}"
+  echo "User: ${PADDLEOCR_USERNAME:-<not_set_in_env>}"
+  echo "Password: ${PADDLEOCR_PASSWORD:-<not_set_in_env>}"
+  echo "API (external via Caddy): https://${PADDLEOCR_HOSTNAME:-<hostname_not_set>}"
+  echo "API (internal): http://paddleocr:8080"
+  echo "Docs: https://paddleocr.a2.fyi/docs"
+  echo "Notes: PaddleX Basic Serving (CPU), pipeline=OCR"
 fi
 
 if is_profile_active "python-runner"; then
@@ -331,7 +361,7 @@ log_info "To update the services, run the 'update.sh' script: bash ./scripts/upd
 # ============================================
 # Cloudflare Tunnel Security Notice
 # ============================================
-if is_profile_active "cloudflare-tunnel" && [ -n "$CLOUDFLARE_TUNNEL_TOKEN" ]; then
+if is_profile_active "cloudflare-tunnel"; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "🔒 CLOUDFLARE TUNNEL SECURITY"
@@ -347,10 +377,6 @@ if is_profile_active "cloudflare-tunnel" && [ -n "$CLOUDFLARE_TUNNEL_TOKEN" ]; t
   echo "   • Port 80 (HTTP)"
   echo "   • Port 443 (HTTPS)" 
   echo "   • Port 7687 (Neo4j Bolt)"
-  echo ""
-  echo "   Example commands:"
-  echo "   └─ UFW:     sudo ufw delete allow 80/tcp && sudo ufw delete allow 443/tcp"
-  echo "   └─ IPtables: sudo iptables -D INPUT -p tcp --dport 80 -j ACCEPT"
   echo ""
   echo "   ⚠️  Only close ports AFTER confirming tunnel connectivity!"
   echo ""

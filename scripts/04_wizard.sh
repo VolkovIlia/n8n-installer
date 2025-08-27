@@ -50,30 +50,32 @@ current_profiles_for_matching=",$CURRENT_PROFILES_VALUE,"
 # --- Define available services and their descriptions ---
 # Base service definitions (tag, description)
 base_services_data=(
-    "n8n" "n8n, n8n-worker, n8n-import (Workflow Automation)"
+    "bolt" "bolt.diy (AI Web Development)"
+    "cloudflare-tunnel" "Cloudflare Tunnel (Zero-Trust Secure Access)"
+    "comfyui" "ComfyUI (Node-based Stable Diffusion UI)"
+    "crawl4ai" "Crawl4ai (Web Crawler for AI)"
     "dify" "Dify (AI Application Development Platform with LLMOps)"
     "flowise" "Flowise (AI Agent Builder)"
-    "bolt" "bolt.diy (AI Web Development)"
-    "openui" "OpenUI (AI Frontend/UI Generator - EXPERIMENTAL, best with Claude/GPT-4)"
-    "monitoring" "Monitoring Suite (Prometheus, Grafana, cAdvisor, Node-Exporter)"
-    "portainer" "Portainer (Docker management UI)"
-    "cloudflare-tunnel" "Cloudflare Tunnel (Zero-Trust Secure Access)"
-    "postiz" "Postiz (Social publishing platform)"
+    "gotenberg" "Gotenberg (Document Conversion API)"
     "langfuse" "Langfuse Suite (AI Observability - includes Clickhouse, Minio)"
+    "letta" "Letta (Agent Server & SDK)"
+    "monitoring" "Monitoring Suite (Prometheus, Grafana, cAdvisor, Node-Exporter)"
+    "n8n" "n8n, n8n-worker, n8n-import (Workflow Automation)"
+    "neo4j" "Neo4j (Graph Database)"
+    "ollama" "Ollama (Local LLM Runner - select hardware in next step)"
+    "open-webui" "Open WebUI (ChatGPT-like Interface)"
+    "openui" "OpenUI (AI Frontend/UI Generator - EXPERIMENTAL, best with Claude/GPT-4)"
+    "paddleocr" "PaddleOCR (OCR API Server)"
+    "portainer" "Portainer (Docker management UI)"
+    "postgresus" "Postgresus (PostgreSQL backups & monitoring)"
+    "postiz" "Postiz (Social publishing platform)"
+    "python-runner" "Python Runner (Run your custom Python code from ./python-runner)"
     "qdrant" "Qdrant (Vector Database)"
+    "ragapp" "RAGApp (Open-source RAG UI + API)"
+    "searxng" "SearXNG (Private Metasearch Engine)"
+    "speech" "Speech Stack (Whisper ASR + OpenedAI TTS - CPU optimized)"
     "supabase" "Supabase (Backend as a Service)"
     "weaviate" "Weaviate (Vector Database with API Key Auth)"
-    "neo4j" "Neo4j (Graph Database)"
-    "letta" "Letta (Agent Server & SDK)"
-    "gotenberg" "Gotenberg (Document Conversion API)"
-    "crawl4ai" "Crawl4ai (Web Crawler for AI)"
-    "ragapp" "RAGApp (Open-source RAG UI + API)"
-    "open-webui" "Open WebUI (ChatGPT-like Interface)"
-    "searxng" "SearXNG (Private Metasearch Engine)"
-    "python-runner" "Python Runner (Run your custom Python code from ./python-runner)"
-    "ollama" "Ollama (Local LLM Runner - select hardware in next step)"
-    "comfyui" "ComfyUI (Node-based Stable Diffusion UI)"
-    "speech" "Speech Stack (Whisper ASR + OpenedAI TTS - CPU optimized)"
 )
 
 services=() # This will be the final array for whiptail
@@ -107,8 +109,9 @@ while [ $idx -lt ${#base_services_data[@]} ]; do
 done
 
 # Use whiptail to display the checklist
+num_services=$(( ${#services[@]} / 3 ))
 CHOICES=$(whiptail --title "Service Selection Wizard" --checklist \
-  "Choose the services you want to deploy.\nUse ARROW KEYS to navigate, SPACEBAR to select/deselect, ENTER to confirm." 32 90 21 \
+  "Choose the services you want to deploy.\nUse ARROW KEYS to navigate, SPACEBAR to select/deselect, ENTER to confirm." 32 90 $num_services \
   "${services[@]}" \
   3>&1 1>&2 2>&3)
 
@@ -229,6 +232,46 @@ fi
 if [ ! -f "$ENV_FILE" ]; then
     log_warning "'.env' file not found at $ENV_FILE. Creating it."
     touch "$ENV_FILE"
+fi
+
+# If Cloudflare Tunnel is selected, prompt for the token and write to .env
+cloudflare_selected=0
+for profile in "${selected_profiles[@]}"; do
+    if [ "$profile" == "cloudflare-tunnel" ]; then
+        cloudflare_selected=1
+        break
+    fi
+done
+
+if [ $cloudflare_selected -eq 1 ]; then
+    existing_cf_token=""
+    if grep -q "^CLOUDFLARE_TUNNEL_TOKEN=" "$ENV_FILE"; then
+        existing_cf_token=$(grep "^CLOUDFLARE_TUNNEL_TOKEN=" "$ENV_FILE" | cut -d'=' -f2- | sed 's/^\"//' | sed 's/\"$//')
+    fi
+
+    if [ -n "$existing_cf_token" ]; then
+        log_info "Cloudflare Tunnel token found in .env; reusing it."
+        # Do not prompt; keep existing token as-is
+    else
+        log_info "Cloudflare Tunnel selected. Please provide your Cloudflare Tunnel token."
+        echo ""
+        read -p "Cloudflare Tunnel Token: " input_cf_token
+        token_to_write="$input_cf_token"
+
+        # Update the .env with the token (may be empty if user skipped)
+        if grep -q "^CLOUDFLARE_TUNNEL_TOKEN=" "$ENV_FILE"; then
+            sed -i.bak "/^CLOUDFLARE_TUNNEL_TOKEN=/d" "$ENV_FILE"
+        fi
+        echo "CLOUDFLARE_TUNNEL_TOKEN=\"$token_to_write\"" >> "$ENV_FILE"
+
+        if [ -n "$token_to_write" ]; then
+            log_success "Cloudflare Tunnel token saved to .env."
+            echo ""
+            echo "🔒 After confirming the tunnel works, consider closing ports 80, 443, and 7687 in your firewall."
+        else
+            log_warning "Cloudflare Tunnel token was left empty. You can set it later in .env."
+        fi
+    fi
 fi
 
 # Remove existing COMPOSE_PROFILES line if it exists

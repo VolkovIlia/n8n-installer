@@ -53,6 +53,7 @@ declare -A VARS_TO_GENERATE=(
     ["DIFY_SECRET_KEY"]="secret:64" # Dify application secret key (maps to SECRET_KEY in Dify)
     ["COMFYUI_PASSWORD"]="password:32" # Added ComfyUI basic auth password
     ["RAGAPP_PASSWORD"]="password:32" # Added RAGApp basic auth password
+    ["PADDLEOCR_PASSWORD"]="password:32" # Added PaddleOCR basic auth password
 )
 
 # Initialize existing_env_vars and attempt to read .env if it exists
@@ -317,44 +318,6 @@ fi
 # Ensure N8N_WORKER_COUNT is definitely set (should be by logic above)
 N8N_WORKER_COUNT="${N8N_WORKER_COUNT:-1}"
 
-# Cloudflare Tunnel Token (optional)
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Cloudflare Tunnel Configuration (Optional)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Cloudflare Tunnel provides secure zero-trust access to your services"
-echo "without exposing ports 80/443 on your server."
-echo ""
-echo "To set up:"
-echo "1. Create a tunnel at https://one.dash.cloudflare.com/"
-echo "3. Copy the tunnel token"
-echo ""
-
-if [[ -v existing_env_vars[CLOUDFLARE_TUNNEL_TOKEN] ]]; then
-    CLOUDFLARE_TUNNEL_TOKEN="${existing_env_vars[CLOUDFLARE_TUNNEL_TOKEN]}"
-    if [[ -n "$CLOUDFLARE_TUNNEL_TOKEN" ]]; then
-        log_info "Found existing Cloudflare Tunnel Token in .env"
-    else
-        log_info "Found empty Cloudflare Tunnel Token in .env. You can provide one now or leave empty."
-        echo ""
-        read -p "Cloudflare Tunnel Token (leave empty to skip): " CLOUDFLARE_TUNNEL_TOKEN
-    fi
-else
-    echo ""
-    read -p "Cloudflare Tunnel Token (leave empty to skip): " CLOUDFLARE_TUNNEL_TOKEN
-fi
-
-if [ -n "$CLOUDFLARE_TUNNEL_TOKEN" ]; then
-    log_success "Cloudflare Tunnel Token configured"
-    echo ""
-    echo "🔒 After confirming the tunnel works, enhance security by:"
-    echo "   Closing ports 80, 443, and 7687 in your VPS firewall"
-    echo "   Example: sudo ufw delete allow 80/tcp"
-    echo ""
-else
-    log_info "Cloudflare Tunnel skipped - you can enable it later in the service selection wizard"
-fi
 
 log_info "Generating secrets and creating .env file..."
 
@@ -453,6 +416,7 @@ generated_values["N8N_WORKER_COUNT"]="$N8N_WORKER_COUNT"
 generated_values["WEAVIATE_USERNAME"]="$USER_EMAIL" # Set Weaviate username for Caddy
 generated_values["COMFYUI_USERNAME"]="$USER_EMAIL" # Set ComfyUI username for Caddy
 generated_values["RAGAPP_USERNAME"]="$USER_EMAIL" # Set RAGApp username for Caddy
+generated_values["PADDLEOCR_USERNAME"]="$USER_EMAIL" # Set PaddleOCR username for Caddy
 
 if [[ -n "$OPENAI_API_KEY" ]]; then
     generated_values["OPENAI_API_KEY"]="$OPENAI_API_KEY"
@@ -493,6 +457,7 @@ found_vars["WEAVIATE_USERNAME"]=0
 found_vars["NEO4J_AUTH_USERNAME"]=0
 found_vars["COMFYUI_USERNAME"]=0
 found_vars["RAGAPP_USERNAME"]=0
+found_vars["PADDLEOCR_USERNAME"]=0
 
 # Read template, substitute domain, generate initial values
 while IFS= read -r line || [[ -n "$line" ]]; do
@@ -743,6 +708,18 @@ if [[ -z "$FINAL_COMFYUI_HASH" && -n "$COMFYUI_PLAIN_PASS" ]]; then
     fi
 fi
 _update_or_add_env_var "COMFYUI_PASSWORD_HASH" "$FINAL_COMFYUI_HASH"
+
+# --- PADDLEOCR ---
+PADDLEOCR_PLAIN_PASS="${generated_values["PADDLEOCR_PASSWORD"]}"
+FINAL_PADDLEOCR_HASH="${generated_values[PADDLEOCR_PASSWORD_HASH]}"
+if [[ -z "$FINAL_PADDLEOCR_HASH" && -n "$PADDLEOCR_PLAIN_PASS" ]]; then
+    NEW_HASH=$(_generate_and_get_hash "$PADDLEOCR_PLAIN_PASS")
+    if [[ -n "$NEW_HASH" ]]; then
+        FINAL_PADDLEOCR_HASH="$NEW_HASH"
+        generated_values["PADDLEOCR_PASSWORD_HASH"]="$NEW_HASH"
+    fi
+fi
+_update_or_add_env_var "PADDLEOCR_PASSWORD_HASH" "$FINAL_PADDLEOCR_HASH"
 
 # --- RAGAPP ---
 RAGAPP_PLAIN_PASS="${generated_values["RAGAPP_PASSWORD"]}"
