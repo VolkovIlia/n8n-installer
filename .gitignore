@@ -9,6 +9,6 @@ shared-backup/
 shared/
 supabase/
 dify/
-volumes/bolt-data/
+volumes/
 openedai-config/
 openedai-voices/

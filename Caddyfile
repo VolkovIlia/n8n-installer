@@ -209,4 +209,3 @@ import /etc/caddy/addons/*.conf
         header_up Connection "close"
     }
 }
-
