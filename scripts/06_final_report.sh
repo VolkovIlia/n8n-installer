@@ -69,6 +69,29 @@ if is_profile_active "flowise"; then
   echo "Password: ${FLOWISE_PASSWORD:-<not_set_in_env>}"
 fi
 
+if is_profile_active "bolt"; then
+  echo
+  echo "================================= bolt.diy ============================="
+  echo
+  echo "Host: ${BOLT_HOSTNAME:-<hostname_not_set>}"
+  echo "Description: AI-powered web development in the browser"
+  echo "Features: Full-stack NodeJS apps, Ollama support, multiple LLM providers"
+  echo "Documentation: https://github.com/stackblitz-labs/bolt.diy"
+fi
+
+if is_profile_active "openui"; then
+  echo
+  echo "================================= OpenUI ==============================="
+  echo
+  echo "⚠️  EXPERIMENTAL: Output quality varies significantly by model"
+  echo
+  echo "Host: ${OPENUI_HOSTNAME:-<hostname_not_set>}"
+  echo "Description: AI-powered UI component generator"
+  echo "Best Models: Claude 4 Sonnet, GPT-4, Groq (for speed)"
+  echo "Note: Can use Ollama but results may be inconsistent"
+  echo "Documentation: https://github.com/wandb/openui"
+fi
+
 if is_profile_active "dify"; then
   echo
   echo "================================= Dify ================================="
@@ -179,6 +202,27 @@ if is_profile_active "comfyui"; then
   echo "Host: ${COMFYUI_HOSTNAME:-<hostname_not_set>}"
   echo "User: ${COMFYUI_USERNAME:-<not_set_in_env>}"
   echo "Password: ${COMFYUI_PASSWORD:-<not_set_in_env>}"
+fi
+
+if is_profile_active "speech"; then
+  echo
+  echo "================================= Speech Stack ========================="
+  echo
+  echo "=== Whisper (Speech-to-Text) ==="
+  echo "Host: ${WHISPER_HOSTNAME:-<hostname_not_set>}"
+  echo "API Endpoint: https://${WHISPER_HOSTNAME:-<hostname_not_set>}/v1/audio/transcriptions"
+  echo "Auth User: ${WHISPER_AUTH_USER:-<not_set_in_env>}"
+  echo "Model: ${WHISPER_MODEL:-Systran/faster-distil-whisper-large-v3}"
+  echo "Internal Access (no auth): http://faster-whisper:8000"
+  echo
+  echo "=== OpenedAI-Speech (Text-to-Speech) ==="
+  echo "Host: ${TTS_HOSTNAME:-<hostname_not_set>}"
+  echo "API Endpoint: https://${TTS_HOSTNAME:-<hostname_not_set>}/v1/audio/speech"
+  echo "Auth User: ${TTS_AUTH_USER:-<not_set_in_env>}"
+  echo "Internal Access (no auth): http://openedai-speech:8000/v1/audio/speech"
+  echo
+  echo "Note: External access requires Basic Auth. Internal access from n8n is auth-free."
+  echo "Note: Services are CPU-optimized for VPS"
 fi
 
 if is_profile_active "qdrant"; then

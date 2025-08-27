@@ -50,6 +50,7 @@ current_profiles_for_matching=",$CURRENT_PROFILES_VALUE,"
 # --- Define available services and their descriptions ---
 # Base service definitions (tag, description)
 base_services_data=(
+    "bolt" "bolt.diy (AI Web Development)"
     "cloudflare-tunnel" "Cloudflare Tunnel (Zero-Trust Secure Access)"
     "comfyui" "ComfyUI (Node-based Stable Diffusion UI)"
     "crawl4ai" "Crawl4ai (Web Crawler for AI)"
@@ -63,6 +64,7 @@ base_services_data=(
     "neo4j" "Neo4j (Graph Database)"
     "ollama" "Ollama (Local LLM Runner - select hardware in next step)"
     "open-webui" "Open WebUI (ChatGPT-like Interface)"
+    "openui" "OpenUI (AI Frontend/UI Generator - EXPERIMENTAL, best with Claude/GPT-4)"
     "paddleocr" "PaddleOCR (OCR API Server)"
     "portainer" "Portainer (Docker management UI)"
     "postgresus" "Postgresus (PostgreSQL backups & monitoring)"
@@ -71,6 +73,7 @@ base_services_data=(
     "qdrant" "Qdrant (Vector Database)"
     "ragapp" "RAGApp (Open-source RAG UI + API)"
     "searxng" "SearXNG (Private Metasearch Engine)"
+    "speech" "Speech Stack (Whisper ASR + OpenedAI TTS - CPU optimized)"
     "supabase" "Supabase (Backend as a Service)"
     "weaviate" "Weaviate (Vector Database with API Key Auth)"
 )
@@ -283,6 +286,79 @@ if [ -z "$COMPOSE_PROFILES_VALUE" ]; then
     log_info "Only core services (Caddy, Postgres, Redis) will be started."
 else
     log_info "The following Docker Compose profiles will be active: ${COMPOSE_PROFILES_VALUE}"
+fi
+
+# Speech Stack Authentication Setup (if speech profile was selected)
+if [[ ",$COMPOSE_PROFILES_VALUE," == *",speech,"* ]]; then
+    log_info ""
+    log_info "Speech Stack Authentication Setup"
+    log_info "================================="
+    log_info "The Speech services (Whisper STT and TTS) need authentication for security."
+    log_info ""
+    
+    # Ask for username
+    read -p "Enter username for Speech services [admin]: " speech_user
+    speech_user=${speech_user:-admin}
+    
+    # Ask for password
+    while true; do
+        read -s -p "Enter password for Speech services: " speech_password
+        echo
+        if [ -z "$speech_password" ]; then
+            log_warning "Password cannot be empty. Please try again."
+        else
+            break
+        fi
+    done
+    
+    # Generate password hashes
+    log_info "Generating secure password hashes..."
+    
+    # Check if Docker is available
+    if command -v docker &> /dev/null; then
+        # Generate hash for Whisper
+        whisper_hash=$(docker run --rm caddy:alpine caddy hash-password --plaintext "$speech_password" 2>/dev/null)
+        if [ $? -eq 0 ] && [ -n "$whisper_hash" ]; then
+            # Use same hash for both services (simpler for users)
+            tts_hash="$whisper_hash"
+            
+            # Update .env file with auth settings
+            # Remove existing entries if present
+            sed -i.bak "/^WHISPER_AUTH_USER=/d" "$ENV_FILE"
+            sed -i.bak "/^WHISPER_AUTH_PASSWORD_HASH=/d" "$ENV_FILE"
+            sed -i.bak "/^TTS_AUTH_USER=/d" "$ENV_FILE"
+            sed -i.bak "/^TTS_AUTH_PASSWORD_HASH=/d" "$ENV_FILE"
+            
+            # Add new entries
+            echo "WHISPER_AUTH_USER=$speech_user" >> "$ENV_FILE"
+            echo "WHISPER_AUTH_PASSWORD_HASH=${whisper_hash//\$/\$\$}" >> "$ENV_FILE"
+            echo "TTS_AUTH_USER=$speech_user" >> "$ENV_FILE"
+            echo "TTS_AUTH_PASSWORD_HASH=${tts_hash//\$/\$\$}" >> "$ENV_FILE"
+            
+            log_success "Speech services authentication configured successfully."
+            log_info "Username: $speech_user"
+            log_info "Use this username and password to access:"
+            log_info "  - Whisper: https://asr.yourdomain.com"
+            log_info "  - TTS: https://tts.yourdomain.com"
+            log_info ""
+        else
+            log_warning "Could not generate password hash. Docker might not be installed yet."
+            log_warning "You'll need to manually set WHISPER_AUTH_PASSWORD_HASH and TTS_AUTH_PASSWORD_HASH in .env"
+            log_info "Run after installation: docker run --rm caddy:alpine caddy hash-password --plaintext 'your-password'"
+        fi
+    else
+        log_warning "Docker not available. Saving plaintext password for later hashing."
+        log_warning "The installer will generate the hash during Docker setup."
+        
+        # Save as temporary placeholder
+        sed -i.bak "/^WHISPER_AUTH_USER=/d" "$ENV_FILE"
+        sed -i.bak "/^SPEECH_TEMP_PASSWORD=/d" "$ENV_FILE"
+        
+        echo "WHISPER_AUTH_USER=$speech_user" >> "$ENV_FILE"
+        echo "TTS_AUTH_USER=$speech_user" >> "$ENV_FILE"
+        echo "SPEECH_TEMP_PASSWORD=$speech_password" >> "$ENV_FILE"
+        echo "# Note: Password hashes will be generated during installation" >> "$ENV_FILE"
+    fi
 fi
 
 # Make the script executable (though install.sh calls it with bash)

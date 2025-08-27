@@ -19,16 +19,21 @@ This setup provides a comprehensive suite of cutting-edge services, all pre-conf
 
 ### What's Included
 
-
 ✅ **[Caddy](https://caddyserver.com/), [Postgres](https://www.postgresql.org/), and [Redis](https://redis.io/)** - Core services for web proxy, database, and caching, which are always included.
 
 The installer also makes the following powerful open-source tools **available for you to select and deploy** via an interactive wizard during setup:
+
+✅ [**n8n**](https://n8n.io/) - A low-code platform with over 400 integrations and advanced AI components to automate workflows.
+
+✅ [**Bolt.diy**](https://github.com/stackblitz-labs/bolt.diy) - An AI-powered web development environment that runs in your browser. Build full-stack applications using natural language prompts, with real-time preview and code generation capabilities.
 
 ✅ [**ComfyUI**](https://github.com/comfyanonymous/ComfyUI) - A powerful, node-based UI for Stable Diffusion workflows. Build and run image-generation pipelines visually, with support for custom nodes and extensions.
 
 ✅ [**Crawl4ai**](https://github.com/Alfresco/crawl4ai) - A flexible web crawler designed for AI, enabling you to extract data from websites for your projects.
 
 ✅ [**Dify**](https://dify.ai/) - An open-source AI application development platform that provides comprehensive LLMOps capabilities, including workflow management, prompt engineering, RAG pipelines, and AI agent orchestration. Perfect for building production-ready AI applications.
+
+✅ [**Faster-Whisper**](https://github.com/fedirz/faster-whisper-server) - OpenAI-compatible Speech-to-Text API server. CPU-optimized for efficient audio transcription without requiring GPU resources.
 
 ✅ [**Flowise**](https://flowiseai.com/) - A no-code/low-code AI agent builder that complements n8n perfectly, allowing you to create sophisticated AI applications with ease.
 
@@ -40,13 +45,15 @@ The installer also makes the following powerful open-source tools **available fo
 
 ✅ [**Letta**](https://docs.letta.com/) - An open-source agent server and SDK that can be connected to various LLM API backends (OpenAI, Anthropic, Ollama, etc.), enabling you to build and manage AI agents.
 
-✅ [**n8n**](https://n8n.io/) - A low-code platform with over 400 integrations and advanced AI components to automate workflows.
-
 ✅ [**Neo4j**](https://neo4j.com/) - A graph database management system that allows you to model, store, and query data as a network of nodes and relationships.
 
 ✅ [**Ollama**](https://ollama.com/) - Run Llama 3, Mistral, Gemma, and other large language models locally.
 
 ✅ [**Open WebUI**](https://openwebui.com/) - A user-friendly, ChatGPT-like interface to interact privately with your AI models and n8n agents.
+
+✅ [**OpenUI**](https://github.com/wandb/openui) - (EXPERIMENTAL) Generate UI components from natural language descriptions. Create React, Vue, or HTML components instantly with AI assistance. Note: Quality varies based on the LLM used.
+
+✅ [**OpenedAI-Speech**](https://github.com/matatonic/openedai-speech) - OpenAI-compatible Text-to-Speech API server. Provides multiple voice options and integrates seamlessly with n8n workflows.
 
 ✅ [**PaddleOCR**](https://www.paddleocr.ai/latest/en/index.html) - A CPU-ready OCR API powered by PaddleX Basic Serving. 
 
@@ -67,6 +74,7 @@ The installer also makes the following powerful open-source tools **available fo
 ✅ [**Supabase**](https://supabase.com/) - An open-source alternative to Firebase, providing database storage, user authentication, and more. It's a popular choice for AI applications.
 
 ✅ [**Weaviate**](https://weaviate.io/) - An open-source AI-native vector database with a focus on scalability and ease of use. It can be used for RAG, hybrid search, and more.
+
 
 ### Included Community Workflows
 
@@ -131,6 +139,8 @@ After successful installation, your services are up and running! Here's how to g
 1.  **Access Your Services:**
     The installation script provided a summary report with all access URLs and credentials. Please refer to that report. The main services will be available at the following addresses (replace `yourdomain.com` with your actual domain):
 
+    - **n8n:** `n8n.yourdomain.com` (Log in with the email address you provided during installation and the initial password from the summary report. You may be prompted to change this password on first login.)
+    - **Bolt.diy:** `bolt.yourdomain.com` (AI-powered web development)
     - **ComfyUI:** `comfyui.yourdomain.com` (Node-based Stable Diffusion UI)
     - **Dify:** `dify.yourdomain.com` (AI application development platform with comprehensive LLMOps capabilities)
     - **Flowise:** `flowise.yourdomain.com` (Log in with the email address you provided during installation and the initial password from the summary report.)
@@ -138,25 +148,43 @@ After successful installation, your services are up and running! Here's how to g
     - **Langfuse:** `langfuse.yourdomain.com`
     - **Letta:** `letta.yourdomain.com`
     - **Neo4j:** `neo4j.yourdomain.com`
-    - **PaddleOCR:** `paddleocr.yourdomain.com`
     - **Open WebUI:** `webui.yourdomain.com`
+    - **OpenUI:** `openui.yourdomain.com` (UI component generation - experimental)
+    - **PaddleOCR:** `paddleocr.yourdomain.com`
     - **Portainer:** `portainer.yourdomain.com` (Protected by Caddy basic auth; on first login, complete Portainer admin setup)
-    - **Postiz:** `postiz.yourdomain.com`
     - **Postgresus:** `postgresus.yourdomain.com`
+    - **Postiz:** `postiz.yourdomain.com`
     - **Prometheus:** `prometheus.yourdomain.com` (Typically used as a data source for Grafana)
     - **Qdrant:** `qdrant.yourdomain.com`
     - **RAGApp:** `ragapp.yourdomain.com`
     - **SearXNG:** `searxng.yourdomain.com`
     - **Supabase (Dashboard):** `supabase.yourdomain.com`
     - **Weaviate:** `weaviate.yourdomain.com`
-    - **n8n:** `n8n.yourdomain.com` (Log in with the email address you provided during installation and the initial password from the summary report. You may be prompted to change this password on first login.)
 
 ### Optional Internal Utility: Python Runner
 
 - **What it is**: An internal-only service to run your custom Python code inside the same Docker network as your other services (n8n, Postgres, Qdrant, etc.). No external ports are exposed, and it is not proxied by Caddy.
-- **How to enable**: Select “Python Runner” in the Service Selection Wizard during install/update, or add the profile manually: `COMPOSE_PROFILES=...,python-runner`.
+- **How to enable**: Select "Python Runner" in the Service Selection Wizard during install/update, or add the profile manually: `COMPOSE_PROFILES=...,python-runner`.
 - **Where to put code**: Place your Python files in `python-runner/`. The default entry point is `python-runner/main.py`.
 - **Dependencies**: Add them to `python-runner/requirements.txt`; they will be installed automatically on container start.
+
+### Speech Stack (Speech-to-Text and Text-to-Speech)
+
+The installer includes optional speech processing services that provide OpenAI-compatible APIs:
+
+#### Faster-Whisper (Speech-to-Text)
+- **Purpose:** Transcribe audio to text using OpenAI-compatible API
+- **Internal Access:** `http://faster-whisper:8000/v1/audio/transcriptions`
+- **External Access:** `https://asr.yourdomain.com` (Basic Auth protected)
+- **Supported Models:** `Systran/faster-whisper-large-v3` (multilingual), `Systran/faster-distil-whisper-large-v3` (English, faster)
+
+#### OpenedAI-Speech (Text-to-Speech)
+- **Purpose:** Generate speech from text using OpenAI-compatible API
+- **Internal Access:** `http://openedai-speech:8000/v1/audio/speech`
+- **External Access:** `https://tts.yourdomain.com` (Basic Auth protected)
+- **Voices:** alloy, echo, fable, onyx, nova, shimmer (additional voices can be configured)
+
+Both services are CPU-optimized and integrate seamlessly with n8n workflows. Basic Authentication is required for external access while internal Docker network access requires no authentication.
 
 2.  **Explore n8n:**
 
@@ -170,6 +198,7 @@ After successful installation, your services are up and running! Here's how to g
     - **Build with Flowise:** Access Flowise at `flowise.yourdomain.com` to create AI agents and applications. You can trigger Flowise agents from n8n or vice-versa.
     - **Interact with Open WebUI:** Use Open WebUI at `webui.yourdomain.com` as a chat interface for your local AI models or n8n agents (e.g., using the n8n_pipe integration if configured).
     - **Configure LLMs:** If you wish to use large language models (LLMs) from providers like OpenAI, Anthropic, or locally via Ollama (if installed), you can easily configure credentials and connections within n8n nodes or in services like Flowise and Open WebUI.
+    - **Build Web Apps with AI:** Use bolt.diy at `bolt.yourdomain.com` to create full-stack web applications using natural language prompts. The AI will generate, preview, and help you iterate on your application in real-time.
 
 4.  **Check Monitoring (Optional):**
     - Visit Grafana (`grafana.yourdomain.com`) to see dashboards monitoring your system's performance (data sourced from Prometheus).
@@ -199,6 +228,47 @@ This setup pre-installs useful Node.js libraries for use in n8n's Code nodes, al
 - **`axios`**: A promise-based HTTP client for making requests to external APIs.
 - **`moment`**: For parsing, validating, manipulating, and displaying dates/times.
 - **`lodash`**: A utility library for common programming tasks (arrays, objects, strings, etc.).
+
+## Configuration
+
+### AI Service API Keys
+
+Several services can leverage AI capabilities when API keys are configured. Add these to your `.env` file after installation:
+
+```bash
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Anthropic (for Claude models)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Groq (for fast inference)
+GROQ_API_KEY=gsk_...
+```
+
+These keys will be available to services like bolt.diy, OpenUI, and can be used in n8n workflows.
+
+### Speech Services Authentication
+
+When accessing Speech services (Whisper STT and OpenedAI TTS) from outside the Docker network, Basic Authentication is required:
+
+1. Generate password hashes:
+   ```bash
+   docker run --rm caddy:alpine caddy hash-password --plaintext your_secure_password
+   ```
+
+2. Add to `.env`:
+   ```bash
+   WHISPER_AUTH_USER=admin
+   WHISPER_AUTH_PASSWORD_HASH=$2a$14$xxxxx
+   TTS_AUTH_USER=admin
+   TTS_AUTH_PASSWORD_HASH=$2a$14$xxxxx
+   ```
+
+3. Restart services:
+   ```bash
+   docker compose restart
+   ```
 
 ## Upgrading
 
@@ -295,6 +365,35 @@ When you build automations in n8n that need to read or write files on your serve
 - [Read/Write Files from Disk](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.filesreadwrite/)
 - [Local File Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.localfiletrigger/) (To start workflows when files change)
 - [Execute Command](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand/) (To run command-line tools)
+
+### Using Speech Services in n8n Workflows
+
+#### Speech-to-Text with Whisper
+Use an HTTP Request node with these settings:
+- **Method:** POST
+- **URL:** `http://faster-whisper:8000/v1/audio/transcriptions`
+- **Body Type:** Form Data Multipart
+- **Parameters:**
+  - `file`: Binary file from previous node
+  - `model`: `Systran/faster-whisper-large-v3`
+  - `language`: (optional) `en`, `de`, etc.
+
+#### Text-to-Speech with OpenedAI-Speech
+Use an HTTP Request node with these settings:
+- **Method:** POST
+- **URL:** `http://openedai-speech:8000/v1/audio/speech`
+- **Headers:**
+  - `Content-Type`: `application/json`
+  - `Authorization`: `Bearer sk-dummy`
+- **Body (JSON):**
+  ```json
+  {
+    "model": "tts-1",
+    "input": "{{ $json.text }}",
+    "voice": "alloy"
+  }
+  ```
+- **Response Format:** File
 
 ## 🙌 Contributors
 
