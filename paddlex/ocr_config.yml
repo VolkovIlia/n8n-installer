@@ -1,7 +1,10 @@
 pipeline_name: OCR
 text_type: general
-use_doc_preprocessor: False
+use_doc_preprocessor: True
 use_textline_orientation: True
+DocPreprocessor:
+  split_pdf_into_pages: True
+  batch_size: 1
 SubModules:
   TextDetection:
     module_name: text_detection
@@ -17,9 +20,9 @@ SubModules:
     module_name: textline_orientation
     model_name: PP-LCNet_x1_0_textline_ori
     model_dir: null
-    batch_size: 6
+    batch_size: 2
   TextRecognition:
     module_name: text_recognition
     model_name: eslav_PP-OCRv5_mobile_rec
     model_dir: null
-    batch_size: 6
+    batch_size: 2
