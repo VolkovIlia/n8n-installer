@@ -26,3 +26,8 @@ SubModules:
     model_name: eslav_PP-OCRv5_mobile_rec
     model_dir: null
     batch_size: 2
+  TableStructure:
+    module_name: table_structure
+    model_name: PP-StructureV2
+    model_dir: null
+    output_format: table
