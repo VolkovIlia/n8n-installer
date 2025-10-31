@@ -25,6 +25,7 @@ volumes:
   qdrant_storage:
   valkey-data:
   weaviate_data:
+  wg_data:
 
 x-n8n: &service-n8n
   build:
@@ -806,3 +807,75 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+
+# VPN Services (wg-easy + Telegram bot)
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:latest
+    container_name: wg-easy
+    profiles: ["vpn"]
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - wg_data:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    environment:
+      - WG_HOST=${WG_HOST}
+      - PASSWORD=${WG_PASSWORD}
+      - WG_DEFAULT_DNS=1.1.1.1,8.8.8.8
+    networks:
+      - vpn_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:51821"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  vpn-telegram-bot:
+    build:
+      context: ./vpn-bot
+      dockerfile: Dockerfile
+    container_name: vpn-telegram-bot
+    profiles: ["vpn"]
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - WG_EASY_HOST=wg-easy
+      - WG_EASY_PORT=51821
+      - WG_PASSWORD=${WG_PASSWORD}
+      - BOT_WHITELIST=${BOT_WHITELIST:-}
+      - BOT_ADMINS=${BOT_ADMINS:-}
+    networks:
+      - vpn_network
+    depends_on:
+      wg-easy:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+networks:
+  vpn_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

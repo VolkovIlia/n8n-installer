@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: wg-easy API
+  description: HTTP API for WireGuard client management via wg-easy
+  version: 1.0.0
+  contact:
+    name: n8n-installer VPN Integration
+    url: https://github.com/wg-easy/wg-easy
+
+servers:
+  - url: http://wg-easy:51821
+    description: Internal Docker network endpoint
+
+security:
+  - PasswordAuth: []
+
+paths:
+  /api/session:
+    post:
+      summary: Authenticate and create session
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: wg-easy UI password (from WG_PASSWORD env var)
+                  example: "auto-generated-32-char-password"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  sessionToken:
+                    type: string
+                    description: Session token for subsequent API calls
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/wireguard/client:
+    get:
+      summary: List all WireGuard clients
+      operationId: listClients
+      responses:
+        '200':
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create new WireGuard client
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  pattern: '^[a-zA-Z0-9_-]+$'
+                  minLength: 1
+                  maxLength: 50
+                  description: Client name (alphanumeric, underscore, hyphen only)
+                  example: "user_123456_1730000000"
+                address:
+                  type: string
+                  format: ipv4
+                  description: Client IPv4 address (optional, auto-assigned if not provided)
+                  example: "10.8.0.2"
+      responses:
+        '201':
+          description: Client created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientWithConfig'
+        '400':
+          description: Invalid request (name conflict, invalid format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/wireguard/client/{clientId}:
+    get:
+      summary: Get client details
+      operationId: getClient
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientWithStats'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      summary: Delete WireGuard client
+      operationId: deleteClient
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '204':
+          description: Client deleted successfully
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/wireguard/client/{clientId}/qrcode:
+    get:
+      summary: Get QR code for client configuration
+      operationId: getClientQRCode
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: QR code as SVG image
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/wireguard/client/{clientId}/configuration:
+    get:
+      summary: Get client configuration file
+      operationId: getClientConfiguration
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: WireGuard configuration file
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  [Interface]
+                  PrivateKey = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=
+                  Address = 10.8.0.2/24
+                  DNS = 1.1.1.1, 8.8.8.8
+
+                  [Peer]
+                  PublicKey = YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY=
+                  PresharedKey = ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ=
+                  Endpoint = 192.168.1.100:51820
+                  AllowedIPs = 0.0.0.0/0, ::/0
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    PasswordAuth:
+      type: http
+      scheme: basic
+      description: Password authentication (uses WG_PASSWORD environment variable)
+
+  parameters:
+    ClientId:
+      name: clientId
+      in: path
+      required: true
+      description: Client ID (auto-generated UUID)
+      schema:
+        type: string
+        format: uuid
+        example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+  responses:
+    Unauthorized:
+      description: Authentication required or session expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Client:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - publicKey
+        - createdAt
+        - enabled
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Client UUID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          description: Client name
+          example: "user_123456_1730000000"
+        address:
+          type: string
+          format: ipv4
+          description: Client IPv4 address
+          example: "10.8.0.2"
+        publicKey:
+          type: string
+          description: Client public key (base64)
+          example: "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY="
+        createdAt:
+          type: string
+          format: date-time
+          description: Client creation timestamp
+          example: "2025-11-01T12:00:00Z"
+        enabled:
+          type: boolean
+          description: Client enabled status
+          example: true
+
+    ClientWithConfig:
+      allOf:
+        - $ref: '#/components/schemas/Client'
+        - type: object
+          properties:
+            configuration:
+              type: string
+              description: Full WireGuard configuration file content
+            qrcodeDataURL:
+              type: string
+              format: uri
+              description: Data URL for QR code (data:image/png;base64,...)
+
+    ClientWithStats:
+      allOf:
+        - $ref: '#/components/schemas/Client'
+        - type: object
+          properties:
+            transferRx:
+              type: integer
+              format: int64
+              description: Bytes received
+              example: 1234567890
+            transferTx:
+              type: integer
+              format: int64
+              description: Bytes transmitted
+              example: 987654321
+            latestHandshakeAt:
+              type: string
+              format: date-time
+              nullable: true
+              description: Last handshake timestamp (null if never connected)
+              example: "2025-11-01T12:30:00Z"
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Client name already exists"
+        code:
+          type: string
+          description: Error code
+          enum:
+            - INVALID_REQUEST
+            - UNAUTHORIZED
+            - NOT_FOUND
+            - CONFLICT
+            - INTERNAL_ERROR
+          example: "CONFLICT"
