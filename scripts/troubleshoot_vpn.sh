@@ -89,6 +89,38 @@ fi
 echo
 
 # ----------------------------------------------------------------
+# Step 2.5: Explain BOT_WHITELIST vs BOT_ADMINS
+# ----------------------------------------------------------------
+log_info "[2.5/6] Understanding Bot Access Control..."
+
+BOT_WHITELIST=$(grep "^BOT_WHITELIST=" "$ENV_FILE" | cut -d'=' -f2- | sed 's/"//g' || echo "")
+BOT_ADMINS=$(grep "^BOT_ADMINS=" "$ENV_FILE" | cut -d'=' -f2- | sed 's/"//g' || echo "")
+
+if [ -z "$BOT_WHITELIST" ]; then
+    log_warning "BOT_WHITELIST is empty - bot allows ALL Telegram users!"
+    log_info "For security, consider adding user IDs to BOT_WHITELIST"
+    log_info "Get your Telegram user ID: search @userinfobot in Telegram"
+else
+    log_success "BOT_WHITELIST configured: $BOT_WHITELIST"
+    log_info "Only these user IDs can request VPN configs"
+fi
+
+if [ -z "$BOT_ADMINS" ]; then
+    log_info "BOT_ADMINS is empty - no admin commands available"
+    log_info "Set BOT_ADMINS to enable /revoke command"
+else
+    log_success "BOT_ADMINS configured: $BOT_ADMINS"
+    log_info "These users can use /revoke to remove VPN access"
+fi
+
+echo
+log_info "Access Control Summary:"
+log_info "  BOT_WHITELIST = Who can use /request to get VPN configs"
+log_info "  BOT_ADMINS = Who can use /revoke to remove access (subset of whitelist)"
+
+echo
+
+# ----------------------------------------------------------------
 # Step 3: Check WireGuard kernel support
 # ----------------------------------------------------------------
 log_info "[3/6] Checking WireGuard kernel support..."

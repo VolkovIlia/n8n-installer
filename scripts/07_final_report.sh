@@ -266,10 +266,14 @@ if is_profile_active "vpn"; then
   if [ -n "$BOT_WHITELIST" ]; then
     echo "   Access restricted to user IDs: ${BOT_WHITELIST}"
   else
-    echo "   Public access (all Telegram users can request configs)"
+    echo "   ⚠️  PUBLIC ACCESS MODE - Anyone can request VPN configs!"
+    echo "   For security, add user IDs to BOT_WHITELIST in .env"
+    echo "   Get your user ID: Open Telegram → search @userinfobot → send any message"
   fi
   if [ -n "$BOT_ADMINS" ]; then
-    echo "   Admin user IDs: ${BOT_ADMINS}"
+    echo "   Admin user IDs: ${BOT_ADMINS} (can use /revoke command)"
+  else
+    echo "   No admin users configured (set BOT_ADMINS to enable /revoke)"
   fi
   echo
   echo "🌐 WireGuard Configuration:"

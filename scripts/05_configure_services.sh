@@ -234,19 +234,42 @@ if [ $vpn_selected -eq 1 ]; then
     if [ -z "$EXISTING_BOT_WHITELIST" ]; then
         require_whiptail
         if wt_yesno "Restrict Bot Access" "Do you want to restrict bot access to specific Telegram users? (Recommended for security)" "yes"; then
-            BOT_WHITELIST_INPUT=$(wt_input "Authorized Users" "Enter comma-separated Telegram user IDs (e.g., 123456789,987654321):" "") || true
+
+            # Show instructions for getting user ID
+            whiptail --title "How to Get Your Telegram User ID" --msgbox \
+"To find your Telegram user ID, use ONE of these methods:
+
+METHOD 1 (Easiest): @userinfobot
+1. Open Telegram
+2. Search for @userinfobot
+3. Start chat and send any message
+4. Bot will reply with your user ID
+
+METHOD 2: Via bot logs (after first message)
+1. Send /start to your VPN bot
+2. Run: docker logs vpn-telegram-bot | grep 'User ID'
+3. Copy the displayed user ID
+
+Your user ID is a number like: 123456789
+
+Press OK to continue..." 20 70
+
+            BOT_WHITELIST_INPUT=$(wt_input "Authorized Users" "Enter comma-separated Telegram user IDs (e.g., 123456789,987654321):\n\nTip: Use @userinfobot to get your user ID" "") || true
 
             if [ -n "$BOT_WHITELIST_INPUT" ]; then
                 write_env_var "BOT_WHITELIST" "$BOT_WHITELIST_INPUT"
                 log_success "Bot whitelist saved to .env."
+                log_info "Only users with IDs: $BOT_WHITELIST_INPUT can access the bot"
             else
                 log_info "Bot whitelist left empty - bot will accept requests from all users."
+                log_warning "WARNING: Without whitelist, anyone can request VPN configs!"
             fi
         else
             log_info "Bot access restriction skipped - bot will accept requests from all users."
+            log_warning "WARNING: Public access mode - consider adding whitelist for security"
         fi
     else
-        log_info "Bot whitelist found in .env; reusing it."
+        log_info "Bot whitelist found in .env; reusing it: $EXISTING_BOT_WHITELIST"
     fi
 
     # Optional: BOT_ADMINS (comma-separated Telegram user IDs for admin commands)

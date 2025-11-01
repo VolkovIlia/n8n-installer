@@ -160,13 +160,29 @@ install_vpn() {
 
     # Optional: User whitelist
     echo ""
+    echo "🔐 Security: Access Control (Recommended)"
+    echo "-------------------------------------------"
+    echo "BOT_WHITELIST restricts who can request VPN configs"
+    echo ""
     read -p "Enable user whitelist? (y/n): " enable_whitelist
     if [ "$enable_whitelist" = "y" ]; then
-        echo "Enter Telegram user IDs (comma-separated):"
+        echo ""
+        echo "How to get your Telegram user ID:"
+        echo "  Method 1: Open Telegram → search @userinfobot → send any message"
+        echo "  Method 2: Send /start to your bot → check logs later"
+        echo ""
+        echo "Enter Telegram user IDs (comma-separated)"
         echo "Example: 123456789,987654321"
         read -p "User IDs: " BOT_WHITELIST
+
+        if [ -n "$BOT_WHITELIST" ]; then
+            print_success "Whitelist configured: $BOT_WHITELIST"
+        else
+            print_warning "Whitelist empty - public access mode (less secure)"
+        fi
     else
         BOT_WHITELIST=""
+        print_warning "Skipping whitelist - bot will accept requests from ALL users"
     fi
 
     # Optional: Admin list
