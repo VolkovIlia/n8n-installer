@@ -26,6 +26,7 @@ volumes:
   valkey-data:
   weaviate_data:
   wg_data:
+  vpn-bot-data:
 
 x-n8n: &service-n8n
   build:
@@ -862,6 +863,8 @@ services:
       - WG_PASSWORD=${WG_PASSWORD}
       - BOT_WHITELIST=${BOT_WHITELIST:-}
       - BOT_ADMINS=${BOT_ADMINS:-}
+    volumes:
+      - vpn-bot-data:/app/db
     networks:
       - vpn_network
     depends_on:

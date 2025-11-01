@@ -1,4 +1,17 @@
-python-telegram-bot==20.7
-requests==2.31.0
-qrcode==7.4.2
-pillow==10.1.0
+# Файл зависимостей для Telegram WireGuard Manager Bot
+
+# Основная библиотека для создания Telegram-ботов
+python-telegram-bot
+
+# Для выполнения HTTP-запросов к API серверов WireGuard
+requests
+
+# Для конвертации SVG QR-кодов в формат PNG
+cairosvg
+
+# Для загрузки переменных окружения из .env файла
+python-dotenv
+
+# Для удобной работы с датами (используется для продления подписки)
+# <<< НЕОБХОДИМА для bot.py и database.py >>>
+python-dateutil

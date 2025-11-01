@@ -1,0 +1,7 @@
+.git
+.env
+*.pyc
+__pycache__
+db/
+*.db
+.DS_Store
