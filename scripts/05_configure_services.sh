@@ -269,15 +269,23 @@ if [ $vpn_selected -eq 1 ]; then
     # Optional: WG_EASY_HOSTNAME (for Caddy reverse proxy with HTTPS)
     EXISTING_WG_EASY_HOSTNAME="$(read_env_var WG_EASY_HOSTNAME)"
 
+    # Get USER_DOMAIN_NAME to suggest subdomain
+    USER_DOMAIN="$(read_env_var USER_DOMAIN_NAME)"
+    DEFAULT_WG_HOSTNAME=""
+    if [ -n "$USER_DOMAIN" ]; then
+        DEFAULT_WG_HOSTNAME="vpn.${USER_DOMAIN}"
+    fi
+
     if [ -z "$EXISTING_WG_EASY_HOSTNAME" ]; then
         require_whiptail
         if wt_yesno "Enable HTTPS Access" "Do you want to enable HTTPS access to wg-easy via Caddy reverse proxy? (Requires domain name)
 
 Without Caddy: http://${WG_HOST:-your-ip}:51821 (direct HTTP)
 With Caddy: https://vpn.yourdomain.com (automatic HTTPS)" "no"; then
-            WG_EASY_HOSTNAME_INPUT=$(wt_input "WG-Easy Domain" "Enter domain for wg-easy (e.g., vpn.yourdomain.com):
+            WG_EASY_HOSTNAME_INPUT=$(wt_input "WG-Easy Domain" "Enter domain for wg-easy:
 
-Leave empty to skip Caddy integration and use direct HTTP access only." "") || true
+Suggested: ${DEFAULT_WG_HOSTNAME:-vpn.yourdomain.com}
+Leave empty to skip Caddy integration and use direct HTTP access only." "$DEFAULT_WG_HOSTNAME") || true
 
             if [ -n "$WG_EASY_HOSTNAME_INPUT" ]; then
                 write_env_var "WG_EASY_HOSTNAME" "$WG_EASY_HOSTNAME_INPUT"
