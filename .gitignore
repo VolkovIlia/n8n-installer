@@ -16,7 +16,6 @@ deadlion-studio
 .claude
 .dev-docs
 .telemetry
-docs
 __pycache__/
 *.pyc
 *.pyo
