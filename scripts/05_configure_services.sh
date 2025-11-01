@@ -169,6 +169,109 @@ fi
 
 
 # ----------------------------------------------------------------
+# VPN Configuration (if vpn profile is active)
+# ----------------------------------------------------------------
+vpn_selected=0
+if [[ "$COMPOSE_PROFILES_VALUE" == *"vpn"* ]]; then
+    vpn_selected=1
+fi
+
+if [ $vpn_selected -eq 1 ]; then
+    log_info "VPN profile selected. Configuring WireGuard + Telegram bot..."
+
+    # Check for existing BOT_TOKEN
+    EXISTING_BOT_TOKEN="$(read_env_var BOT_TOKEN)"
+
+    if [ -n "$EXISTING_BOT_TOKEN" ]; then
+        log_info "Telegram Bot token found in .env; reusing it."
+    else
+        # Prompt for BOT_TOKEN
+        require_whiptail
+        BOT_TOKEN_INPUT=$(wt_input "Telegram Bot Token" "Enter your Telegram Bot token from @BotFather (required):" "") || true
+
+        # Validate BOT_TOKEN format (basic regex: digits:alphanumeric_-{35})
+        if [[ -n "$BOT_TOKEN_INPUT" && "$BOT_TOKEN_INPUT" =~ ^[0-9]+:[A-Za-z0-9_-]{35}$ ]]; then
+            write_env_var "BOT_TOKEN" "$BOT_TOKEN_INPUT"
+            log_success "Telegram Bot token saved to .env."
+        elif [ -n "$BOT_TOKEN_INPUT" ]; then
+            log_warning "Invalid bot token format. Expected format: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+            log_warning "You can set BOT_TOKEN manually in .env later."
+        else
+            log_warning "Telegram Bot token was left empty. You must set BOT_TOKEN in .env before starting VPN services."
+        fi
+    fi
+
+    # Check for existing WG_HOST
+    EXISTING_WG_HOST="$(read_env_var WG_HOST)"
+
+    if [ -n "$EXISTING_WG_HOST" ]; then
+        log_info "WireGuard host found in .env; reusing it: $EXISTING_WG_HOST"
+    else
+        # Auto-detect external IP
+        DETECTED_IP=$(curl -s ifconfig.me || curl -s api.ipify.org || curl -s icanhazip.com || echo "")
+
+        if [ -n "$DETECTED_IP" ]; then
+            log_info "Detected external IP: $DETECTED_IP"
+            require_whiptail
+            WG_HOST_INPUT=$(wt_input "WireGuard Host" "Enter WireGuard host (IP or domain). Detected IP: $DETECTED_IP" "$DETECTED_IP") || true
+        else
+            log_warning "Failed to auto-detect external IP."
+            require_whiptail
+            WG_HOST_INPUT=$(wt_input "WireGuard Host" "Enter your server's external IP address or domain name:" "") || true
+        fi
+
+        if [ -n "$WG_HOST_INPUT" ]; then
+            write_env_var "WG_HOST" "$WG_HOST_INPUT"
+            log_success "WireGuard host saved to .env: $WG_HOST_INPUT"
+        else
+            log_warning "WireGuard host was left empty. You must set WG_HOST in .env before starting VPN services."
+        fi
+    fi
+
+    # Optional: BOT_WHITELIST (comma-separated Telegram user IDs)
+    EXISTING_BOT_WHITELIST="$(read_env_var BOT_WHITELIST)"
+
+    if [ -z "$EXISTING_BOT_WHITELIST" ]; then
+        require_whiptail
+        if wt_yesno "Restrict Bot Access" "Do you want to restrict bot access to specific Telegram users? (Recommended for security)" "yes"; then
+            BOT_WHITELIST_INPUT=$(wt_input "Authorized Users" "Enter comma-separated Telegram user IDs (e.g., 123456789,987654321):" "") || true
+
+            if [ -n "$BOT_WHITELIST_INPUT" ]; then
+                write_env_var "BOT_WHITELIST" "$BOT_WHITELIST_INPUT"
+                log_success "Bot whitelist saved to .env."
+            else
+                log_info "Bot whitelist left empty - bot will accept requests from all users."
+            fi
+        else
+            log_info "Bot access restriction skipped - bot will accept requests from all users."
+        fi
+    else
+        log_info "Bot whitelist found in .env; reusing it."
+    fi
+
+    # Optional: BOT_ADMINS (comma-separated Telegram user IDs for admin commands)
+    EXISTING_BOT_ADMINS="$(read_env_var BOT_ADMINS)"
+
+    if [ -z "$EXISTING_BOT_ADMINS" ]; then
+        require_whiptail
+        BOT_ADMINS_INPUT=$(wt_input "Admin Users" "Enter comma-separated Telegram user IDs for admin commands (optional, /revoke access):" "") || true
+
+        if [ -n "$BOT_ADMINS_INPUT" ]; then
+            write_env_var "BOT_ADMINS" "$BOT_ADMINS_INPUT"
+            log_success "Bot admins saved to .env."
+        else
+            log_info "Bot admins left empty - no admin access configured."
+        fi
+    else
+        log_info "Bot admins found in .env; reusing it."
+    fi
+
+    echo ""
+    log_info "VPN configuration complete. WG_PASSWORD will be auto-generated in next step."
+fi
+
+
+# ----------------------------------------------------------------
 # Safety: If Supabase is present, remove Dify from COMPOSE_PROFILES (no prompts)
 # ----------------------------------------------------------------
 if [[ -n "$COMPOSE_PROFILES_VALUE" && "$COMPOSE_PROFILES_VALUE" == *"supabase"* ]]; then

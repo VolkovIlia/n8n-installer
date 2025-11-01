@@ -64,13 +64,43 @@ install_vpn() {
 
     check_prerequisites
 
+    # VPN-specific prerequisite checks
+    echo "🔍 Checking VPN prerequisites..."
+
+    # Check kernel version for WireGuard support
+    KERNEL_VERSION=$(uname -r | cut -d'.' -f1-2)
+    KERNEL_MAJOR=$(echo $KERNEL_VERSION | cut -d'.' -f1)
+    KERNEL_MINOR=$(echo $KERNEL_VERSION | cut -d'.' -f2)
+
+    if [ "$KERNEL_MAJOR" -lt 5 ] || ([ "$KERNEL_MAJOR" -eq 5 ] && [ "$KERNEL_MINOR" -lt 6 ]); then
+        print_warning "Kernel $KERNEL_VERSION detected. WireGuard kernel module requires ≥5.6"
+        print_warning "Will fallback to wireguard-go if needed"
+    else
+        print_success "Kernel $KERNEL_VERSION supports WireGuard module"
+    fi
+
+    # Check if ports are available
+    if command -v ss &> /dev/null; then
+        if ss -tulpn 2>/dev/null | grep -q ":51820 "; then
+            print_error "Port 51820 (WireGuard) is already in use"
+            print_error "Please free the port or change WG_PORT in docker-compose.yml"
+            exit 1
+        fi
+        if ss -tulpn 2>/dev/null | grep -q ":51821 "; then
+            print_error "Port 51821 (wg-easy UI) is already in use"
+            print_error "Please free the port or change WG_UI_PORT in docker-compose.yml"
+            exit 1
+        fi
+        print_success "Ports 51820 and 51821 are available"
+    fi
+
     # Check if .env exists
     if [ ! -f .env ]; then
         print_warning ".env file not found. Creating..."
         touch .env
     fi
 
-    # Prompt for BOT_TOKEN
+    # Prompt for BOT_TOKEN with validation
     echo ""
     echo "📱 Telegram Bot Setup"
     echo "-------------------"
@@ -79,12 +109,29 @@ install_vpn() {
     echo "2. Send /newbot command"
     echo "3. Follow instructions and copy token"
     echo ""
-    read -p "Enter Telegram Bot Token: " BOT_TOKEN
 
-    if [ -z "$BOT_TOKEN" ]; then
-        print_error "Bot token is required"
-        exit 1
-    fi
+    while true; do
+        read -p "Enter Telegram Bot Token: " BOT_TOKEN
+
+        if [ -z "$BOT_TOKEN" ]; then
+            print_error "Bot token is required"
+            read -p "Try again? (y/n): " retry
+            [ "$retry" != "y" ] && exit 1
+            continue
+        fi
+
+        # Validate BOT_TOKEN format: digits:alphanumeric_-{35}
+        if [[ "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{35}$ ]]; then
+            print_success "Bot token format is valid"
+            break
+        else
+            print_error "Invalid bot token format"
+            echo "Expected format: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+            echo "Your token: $BOT_TOKEN"
+            read -p "Try again? (y/n): " retry
+            [ "$retry" != "y" ] && exit 1
+        fi
+    done
 
     # Auto-detect external IP
     echo ""

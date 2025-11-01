@@ -58,6 +58,8 @@ declare -A VARS_TO_GENERATE=(
     # WAHA (WhatsApp HTTP API)
     ["WAHA_DASHBOARD_PASSWORD"]="password:32"
     ["WHATSAPP_SWAGGER_PASSWORD"]="password:32"
+    # VPN (WireGuard + Telegram Bot)
+    ["WG_PASSWORD"]="secret:48" # WireGuard wg-easy UI password (36 bytes -> 48 chars base64)
 )
 
 # Initialize existing_env_vars and attempt to read .env if it exists

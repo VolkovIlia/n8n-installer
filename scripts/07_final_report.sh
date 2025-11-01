@@ -240,6 +240,40 @@ if is_profile_active "waha"; then
   echo "API key (plain): ${WAHA_API_KEY_PLAIN:-<not_set_in_env>}"
 fi
 
+if is_profile_active "vpn"; then
+  echo
+  echo "============================== VPN (WireGuard) ==============================="
+  echo
+  echo "🔐 wg-easy Management UI:"
+  echo "   Host: http://${WG_HOST:-<not_set_in_env>}:51821"
+  echo "   Password: ${WG_PASSWORD:-<not_set_in_env>}"
+  echo
+  echo "🤖 Telegram Bot:"
+  echo "   Send /start to your bot in Telegram"
+  echo "   Use /request to get VPN configuration"
+  echo "   Use /status to check connection status"
+  echo "   Use /revoke to revoke access (admins only)"
+  echo
+  echo "📋 Bot Configuration:"
+  if [ -n "$BOT_WHITELIST" ]; then
+    echo "   Access restricted to user IDs: ${BOT_WHITELIST}"
+  else
+    echo "   Public access (all Telegram users can request configs)"
+  fi
+  if [ -n "$BOT_ADMINS" ]; then
+    echo "   Admin user IDs: ${BOT_ADMINS}"
+  fi
+  echo
+  echo "🌐 WireGuard Configuration:"
+  echo "   External Host: ${WG_HOST:-<not_set_in_env>}"
+  echo "   UDP Port: 51820"
+  echo "   DNS Servers: 1.1.1.1, 8.8.8.8"
+  echo
+  echo "📖 Documentation: ./docs/"
+  echo "   - API Reference: ./docs/api/telegram-bot-api.md"
+  echo "   - Troubleshooting: ./docs/troubleshooting.md"
+fi
+
 if is_profile_active "paddleocr"; then
   echo
   echo "================================= PaddleOCR ==========================="
