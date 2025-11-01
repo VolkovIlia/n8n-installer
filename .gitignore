@@ -11,3 +11,9 @@ supabase/
 dify/
 volumes/
 docker-compose.override.yml
+.gitmodules
+deadlion-studio
+.claude
+.dev-docs
+.telemetry
+docs
