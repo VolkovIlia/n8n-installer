@@ -612,6 +612,20 @@ if [[ -z "$FINAL_WG_EASY_HASH" && -n "$WG_EASY_PLAIN_PASS" ]]; then
 fi
 _update_or_add_env_var "WG_EASY_PASSWORD_HASH" "$FINAL_WG_EASY_HASH"
 
+# --- WG_PASSWORD_HASH (for wg-easy container v14+ - requires PASSWORD_HASH instead of PASSWORD) ---
+WG_PLAIN_PASS="${generated_values["WG_PASSWORD"]}"
+FINAL_WG_HASH="${generated_values[WG_PASSWORD_HASH]}"
+if [[ -z "$FINAL_WG_HASH" && -n "$WG_PLAIN_PASS" ]]; then
+    log_info "Generating bcrypt hash for wg-easy PASSWORD_HASH (from WG_PASSWORD)..."
+    NEW_WG_HASH=$(_generate_and_get_hash "$WG_PLAIN_PASS")
+    if [[ -n "$NEW_WG_HASH" ]]; then
+        FINAL_WG_HASH="$NEW_WG_HASH"
+        generated_values["WG_PASSWORD_HASH"]="$NEW_WG_HASH"
+        log_success "WG_PASSWORD_HASH generated for wg-easy container"
+    fi
+fi
+_update_or_add_env_var "WG_PASSWORD_HASH" "$FINAL_WG_HASH"
+
 if [ $? -eq 0 ]; then # This $? reflects the status of the last mv command from the last _update_or_add_env_var call.
     # For now, assuming if we reached here and mv was fine, primary operations were okay.
     echo ".env file generated successfully in the project root ($OUTPUT_FILE)."
