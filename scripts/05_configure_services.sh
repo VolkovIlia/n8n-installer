@@ -266,8 +266,35 @@ if [ $vpn_selected -eq 1 ]; then
         log_info "Bot admins found in .env; reusing it."
     fi
 
+    # Optional: WG_EASY_HOSTNAME (for Caddy reverse proxy with HTTPS)
+    EXISTING_WG_EASY_HOSTNAME="$(read_env_var WG_EASY_HOSTNAME)"
+
+    if [ -z "$EXISTING_WG_EASY_HOSTNAME" ]; then
+        require_whiptail
+        if wt_yesno "Enable HTTPS Access" "Do you want to enable HTTPS access to wg-easy via Caddy reverse proxy? (Requires domain name)
+
+Without Caddy: http://${WG_HOST:-your-ip}:51821 (direct HTTP)
+With Caddy: https://vpn.yourdomain.com (automatic HTTPS)" "no"; then
+            WG_EASY_HOSTNAME_INPUT=$(wt_input "WG-Easy Domain" "Enter domain for wg-easy (e.g., vpn.yourdomain.com):
+
+Leave empty to skip Caddy integration and use direct HTTP access only." "") || true
+
+            if [ -n "$WG_EASY_HOSTNAME_INPUT" ]; then
+                write_env_var "WG_EASY_HOSTNAME" "$WG_EASY_HOSTNAME_INPUT"
+                log_success "WG-Easy domain saved: $WG_EASY_HOSTNAME_INPUT (Caddy will handle HTTPS)"
+                log_info "WG_EASY_USERNAME and WG_EASY_PASSWORD will be auto-generated in next step."
+            else
+                log_info "Caddy integration skipped - wg-easy will be accessible via direct HTTP only."
+            fi
+        else
+            log_info "Caddy integration skipped - wg-easy will be accessible via direct HTTP only."
+        fi
+    else
+        log_info "WG-Easy domain found in .env; reusing it: $EXISTING_WG_EASY_HOSTNAME"
+    fi
+
     echo ""
-    log_info "VPN configuration complete. WG_PASSWORD will be auto-generated in next step."
+    log_info "VPN configuration complete. Credentials will be auto-generated in next step."
 fi
 
 
