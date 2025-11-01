@@ -1,0 +1,268 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telegram Bot Commands Schema",
+  "description": "Command interface for vpnTelegram bot",
+  "version": "1.0.0",
+
+  "definitions": {
+    "Command": {
+      "type": "object",
+      "required": ["name", "description", "handler", "auth_required"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^/[a-z_]+$",
+          "description": "Command name with leading slash"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable command description"
+        },
+        "handler": {
+          "type": "string",
+          "description": "Python handler function name"
+        },
+        "auth_required": {
+          "type": "boolean",
+          "description": "Whether command requires whitelist authentication"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        }
+      }
+    },
+
+    "Parameter": {
+      "type": "object",
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "boolean"],
+          "description": "Parameter data type"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether parameter is mandatory"
+        },
+        "description": {
+          "type": "string",
+          "description": "Parameter description"
+        },
+        "default": {
+          "description": "Default value if not provided"
+        }
+      }
+    },
+
+    "Response": {
+      "type": "object",
+      "required": ["text", "type"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Response message text (supports Telegram Markdown)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "document", "photo", "error"],
+          "description": "Response content type"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["qr_code", "config_file"]
+              },
+              "data": {
+                "type": "string",
+                "description": "File data or path"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "commands": [
+    {
+      "name": "/start",
+      "description": "Welcome message and bot introduction",
+      "handler": "handle_start",
+      "auth_required": false,
+      "parameters": [],
+      "response_example": {
+        "text": "Добро пожаловать в VPN Bot!\n\nДоступные команды:\n/request - Запросить VPN конфигурацию\n/status - Проверить статус VPN\n/help - Справка по командам",
+        "type": "text"
+      }
+    },
+
+    {
+      "name": "/request",
+      "description": "Request new VPN configuration",
+      "handler": "handle_request",
+      "auth_required": true,
+      "parameters": [
+        {
+          "name": "device_name",
+          "type": "string",
+          "required": false,
+          "description": "Optional device identifier (e.g., 'laptop', 'phone')",
+          "default": null
+        }
+      ],
+      "response_example": {
+        "text": "✅ VPN конфигурация создана!\n\nИмя клиента: user_123456_1730000000\nIP адрес: 10.8.0.2\n\nСканируйте QR код или загрузите файл конфигурации.",
+        "type": "photo",
+        "attachments": [
+          {
+            "type": "qr_code",
+            "data": "qr_code_image.png"
+          },
+          {
+            "type": "config_file",
+            "data": "user_123456_1730000000.conf"
+          }
+        ]
+      },
+      "error_responses": [
+        {
+          "condition": "user_not_whitelisted",
+          "text": "❌ Доступ запрещен. Обратитесь к администратору.",
+          "type": "error"
+        },
+        {
+          "condition": "wg_easy_api_error",
+          "text": "❌ Ошибка создания конфигурации. Повторите попытку позже.",
+          "type": "error"
+        },
+        {
+          "condition": "client_already_exists",
+          "text": "✅ У вас уже есть активная конфигурация. Используйте /status для проверки.",
+          "type": "text"
+        }
+      ]
+    },
+
+    {
+      "name": "/revoke",
+      "description": "Revoke existing VPN configuration",
+      "handler": "handle_revoke",
+      "auth_required": true,
+      "parameters": [],
+      "response_example": {
+        "text": "🗑️ Ваша VPN конфигурация удалена.\n\nВы можете запросить новую конфигурацию командой /request",
+        "type": "text"
+      },
+      "error_responses": [
+        {
+          "condition": "no_config_exists",
+          "text": "❌ У вас нет активной конфигурации.",
+          "type": "error"
+        }
+      ]
+    },
+
+    {
+      "name": "/status",
+      "description": "Check VPN connection status",
+      "handler": "handle_status",
+      "auth_required": true,
+      "parameters": [],
+      "response_example": {
+        "text": "📊 Статус VPN\n\nКлиент: user_123456_1730000000\nСтатус: ✅ Подключен\nПоследний handshake: 30 секунд назад\nПолучено: 1.2 GB\nОтправлено: 850 MB",
+        "type": "text"
+      },
+      "error_responses": [
+        {
+          "condition": "no_config_exists",
+          "text": "❌ У вас нет активной конфигурации. Используйте /request для создания.",
+          "type": "error"
+        },
+        {
+          "condition": "disconnected",
+          "text": "📊 Статус VPN\n\nКлиент: user_123456_1730000000\nСтатус: ⚠️ Отключен\nПоследний handshake: 2 часа назад",
+          "type": "text"
+        }
+      ]
+    },
+
+    {
+      "name": "/help",
+      "description": "Show detailed command help",
+      "handler": "handle_help",
+      "auth_required": false,
+      "parameters": [],
+      "response_example": {
+        "text": "📖 Справка по командам\n\n/start - Приветственное сообщение\n/request - Запросить VPN конфигурацию (отправит QR код и .conf файл)\n/revoke - Удалить существующую конфигурацию\n/status - Проверить статус подключения\n/help - Эта справка\n\nДля установки WireGuard клиента:\nWindows/macOS: https://www.wireguard.com/install/\nAndroid/iOS: Найдите WireGuard в магазине приложений",
+        "type": "text"
+      }
+    }
+  ],
+
+  "internal_events": {
+    "admin_revoke": {
+      "description": "Administrator revokes user access (sent to user)",
+      "payload": {
+        "user_id": {
+          "type": "integer",
+          "description": "Telegram user ID"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Revocation reason (optional)"
+        }
+      },
+      "notification_text": "⚠️ Ваш VPN доступ был отозван администратором.\n\nПричина: {reason}\n\nДля получения нового доступа используйте /request"
+    }
+  },
+
+  "rate_limits": {
+    "global": {
+      "requests_per_minute": 60,
+      "burst": 10
+    },
+    "per_user": {
+      "/request": {
+        "requests_per_hour": 5,
+        "cooldown_seconds": 60
+      },
+      "/status": {
+        "requests_per_minute": 10
+      },
+      "/revoke": {
+        "requests_per_hour": 3
+      }
+    }
+  },
+
+  "error_codes": {
+    "RATE_LIMIT_EXCEEDED": {
+      "message": "⏱️ Слишком много запросов. Попробуйте через {cooldown} секунд.",
+      "http_status": 429
+    },
+    "UNAUTHORIZED": {
+      "message": "❌ Доступ запрещен. Обратитесь к администратору.",
+      "http_status": 403
+    },
+    "INTERNAL_ERROR": {
+      "message": "❌ Внутренняя ошибка бота. Повторите попытку позже.",
+      "http_status": 500
+    },
+    "WG_EASY_UNAVAILABLE": {
+      "message": "❌ Сервис VPN временно недоступен. Попробуйте позже.",
+      "http_status": 503
+    }
+  }
+}

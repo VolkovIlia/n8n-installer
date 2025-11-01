@@ -1,0 +1,341 @@
+{
+  "hypothesis": {
+    "version": "1.0",
+    "created": "2025-11-01",
+    "project": "n8n-installer VPN Integration",
+    "statement": "We believe that integrating WireGuard VPN with Telegram bot management into n8n-installer will enable Russian users and their clients to bypass geographical access restrictions, resulting in reliable n8n access and simplified VPN config distribution within 10 minutes of installation",
+
+    "context": {
+      "problem": "n8n and related services are blocked in Russian Federation due to geographical restrictions",
+      "target_users": [
+        "System administrator (personal use + client service)",
+        "End clients (receiving VPN configs via Telegram bot)"
+      ],
+      "current_alternatives": [
+        "Manual VPN setup (complex, time-consuming)",
+        "Commercial VPN services (monthly fees, trust issues)",
+        "Proxy servers (less secure, unreliable)"
+      ],
+      "proposed_solution": "Automated WireGuard VPN installation via n8n-installer menu with Telegram bot for client config distribution",
+      "constraints": [
+        "8GB RAM, 8 CPU cores server",
+        "Must not conflict with existing n8n services",
+        "Must integrate cleanly into docker-compose.yml",
+        "Telegram bot must be accessible in Russia"
+      ]
+    },
+
+    "assumptions": [
+      {
+        "id": "A1",
+        "assumption": "WireGuard protocol can effectively bypass Russian internet restrictions (DPI, IP blocks)",
+        "risk": "HIGH",
+        "evidence_level": "D",
+        "validation_method": "Technical pilot test from Russian IP address with active geo-blocking",
+        "validation_criteria": "Successfully connect to n8n via WireGuard from Russian IP within 3 connection attempts",
+        "critical": true,
+        "rationale": "Core value proposition depends on bypassing geo-blocks. If WireGuard is blocked/detected, entire project fails."
+      },
+      {
+        "id": "A2",
+        "assumption": "Telegram bot API is accessible in Russia for VPN management",
+        "risk": "HIGH",
+        "evidence_level": "D",
+        "validation_method": "Check current Telegram API availability status in Russia via public monitoring services + test bot API from Russian IP",
+        "validation_criteria": "Telegram bot responds to commands from Russian IP with <2 second latency",
+        "critical": true,
+        "rationale": "Primary config distribution method. If blocked, need fallback (manual QR code export from wg-easy UI).",
+        "mitigation_if_blocked": "Provide alternative QR code delivery via wg-easy UI + email/file share"
+      },
+      {
+        "id": "A3",
+        "assumption": "8GB RAM / 8 CPU server can handle n8n + PostgreSQL + wg-easy + Telegram bot simultaneously without performance degradation",
+        "risk": "LOW",
+        "evidence_level": "D",
+        "validation_method": "Resource consumption profiling under load (20 concurrent VPN clients + n8n workflows)",
+        "validation_criteria": "Combined resource usage: RAM <6GB, CPU <80% under max load",
+        "critical": false,
+        "rationale": "Conservative resource allocation (wg-easy: 512MB, bot: 256MB) leaves 7.2GB for n8n. Should be sufficient."
+      },
+      {
+        "id": "A4",
+        "assumption": "wg-easy + custom Telegram bot integration works reliably without major bugs",
+        "risk": "MEDIUM",
+        "evidence_level": "D",
+        "validation_method": "Integration testing in staging environment (create/delete clients, QR generation, bot commands)",
+        "validation_criteria": "All bot commands (start, request, revoke, status) work without errors in 20+ test runs",
+        "critical": false,
+        "rationale": "wg-easy is mature project, but custom bot integration needs validation. Risk is implementation bugs, not fundamental feasibility."
+      },
+      {
+        "id": "A5",
+        "assumption": "Users can complete WireGuard client installation (Windows/macOS/Linux/iOS/Android) without technical support",
+        "risk": "LOW",
+        "evidence_level": "D",
+        "validation_method": "User testing with 5 non-technical users + documentation review",
+        "validation_criteria": ">80% of test users successfully connect on first attempt with only documentation",
+        "critical": false,
+        "rationale": "WireGuard clients have simple UI (scan QR or import .conf). Risk is documentation quality, not technical complexity."
+      },
+      {
+        "id": "A6",
+        "assumption": "Docker Compose integration doesn't break existing n8n services (network conflicts, port collisions, resource contention)",
+        "risk": "MEDIUM",
+        "evidence_level": "D",
+        "validation_method": "Regression testing after VPN installation (n8n UI, workflows, database connections)",
+        "validation_criteria": "All existing n8n services remain 100% functional (zero downtime, zero errors) after VPN installation",
+        "critical": true,
+        "rationale": "Non-negotiable constraint. Any disruption to n8n invalidates the solution."
+      },
+      {
+        "id": "A7",
+        "assumption": "Installation time <10 minutes is achievable for non-expert administrators",
+        "risk": "LOW",
+        "evidence_level": "D",
+        "validation_method": "Time-boxed installation tests with 3 administrators of varying skill levels",
+        "validation_criteria": "Average installation time <10 minutes (including bot token setup)",
+        "critical": false,
+        "rationale": "Installation is automated via menu option. Main time sink is Telegram bot token creation (~2 minutes) + Docker image pull (~3-5 minutes)."
+      }
+    ],
+
+    "success_metrics": [
+      {
+        "metric": "Installation Time",
+        "target": "<10 minutes from menu selection to working VPN",
+        "measurement": "Stopwatch timer from user selecting 'Install VPN' to receiving confirmation message",
+        "baseline": "N/A (new feature)",
+        "tracking_method": "Manual timing during testing + telemetry in production",
+        "priority": "HIGH"
+      },
+      {
+        "metric": "First-Connection Success Rate",
+        "target": ">90% of clients connect successfully on first attempt",
+        "measurement": "% of users who report successful VPN connection without support requests",
+        "baseline": "N/A (new feature)",
+        "tracking_method": "Bot command logs (/status command shows connection) + user surveys",
+        "priority": "HIGH"
+      },
+      {
+        "metric": "VPN Uptime",
+        "target": ">95% uptime over 30 days",
+        "measurement": "Docker container health checks every 30 seconds",
+        "baseline": "N/A (new feature)",
+        "tracking_method": "Health check logs + monitoring dashboard",
+        "priority": "MEDIUM"
+      },
+      {
+        "metric": "Bot Response Time",
+        "target": "<2 seconds for config generation",
+        "measurement": "Time from user sending /request to receiving QR code",
+        "baseline": "N/A (new feature)",
+        "tracking_method": "Bot command execution logs (timestamp start -> timestamp complete)",
+        "priority": "MEDIUM"
+      },
+      {
+        "metric": "n8n Service Stability",
+        "target": "Zero degradation (100% uptime maintained)",
+        "measurement": "n8n UI response time + workflow execution success rate before/after VPN install",
+        "baseline": "Current n8n uptime (assume 99%+)",
+        "tracking_method": "n8n logs + Docker stats comparison",
+        "priority": "CRITICAL"
+      },
+      {
+        "metric": "Resource Utilization",
+        "target": "VPN services <1GB RAM, <1 CPU core",
+        "measurement": "docker stats (RAM, CPU usage for wg-easy + vpnTelegram containers)",
+        "baseline": "N/A (new feature)",
+        "tracking_method": "Continuous monitoring via docker stats + alerts at 80% threshold",
+        "priority": "MEDIUM"
+      }
+    ],
+
+    "risks": [
+      {
+        "id": "R-001",
+        "risk": "Telegram bot blocked or throttled in Russia",
+        "probability": "MEDIUM",
+        "impact": "HIGH",
+        "severity": "CRITICAL",
+        "mitigation": "Implement fallback: Manual QR code export from wg-easy UI + document email/file sharing method",
+        "contingency": "If bot unavailable, provide direct wg-easy UI access (requires VPN or proxy to access UI)",
+        "linked_assumptions": ["A2"]
+      },
+      {
+        "id": "R-002",
+        "risk": "WireGuard protocol detected and blocked by Russian DPI (Deep Packet Inspection)",
+        "probability": "LOW",
+        "impact": "CRITICAL",
+        "severity": "CRITICAL",
+        "mitigation": "Research WireGuard obfuscation techniques (e.g., obfs4, shadowsocks wrapper) + prepare migration plan",
+        "contingency": "Fall back to obfuscated VPN protocols (OpenVPN + obfsproxy) or commercial VPN service",
+        "linked_assumptions": ["A1"]
+      },
+      {
+        "id": "R-003",
+        "risk": "Port conflicts on target servers (51820, 51821 already in use)",
+        "probability": "LOW",
+        "impact": "MEDIUM",
+        "severity": "MEDIUM",
+        "mitigation": "Pre-installation port check + offer alternative port configuration",
+        "contingency": "Allow user to specify custom ports during installation",
+        "linked_assumptions": []
+      },
+      {
+        "id": "R-004",
+        "risk": "Resource exhaustion on small servers (8GB RAM insufficient)",
+        "probability": "LOW",
+        "impact": "HIGH",
+        "severity": "MEDIUM",
+        "mitigation": "Set Docker resource limits (wg-easy: 512MB, bot: 256MB) + implement monitoring alerts",
+        "contingency": "Reduce n8n workflow concurrency or upgrade server resources",
+        "linked_assumptions": ["A3"]
+      },
+      {
+        "id": "R-005",
+        "risk": "Integration bugs break existing n8n services",
+        "probability": "MEDIUM",
+        "impact": "CRITICAL",
+        "severity": "HIGH",
+        "mitigation": "Comprehensive regression testing + isolated Docker networks (vpn_network vs n8n_network)",
+        "contingency": "Provide rollback script to remove VPN services cleanly",
+        "linked_assumptions": ["A6"]
+      },
+      {
+        "id": "R-006",
+        "risk": "WireGuard kernel module not available on older kernels (<5.6)",
+        "probability": "LOW",
+        "impact": "MEDIUM",
+        "severity": "MEDIUM",
+        "mitigation": "Pre-installation kernel version check + document kernel upgrade process",
+        "contingency": "Use wireguard-go (userspace implementation) as fallback",
+        "linked_assumptions": []
+      },
+      {
+        "id": "R-007",
+        "risk": "Users cannot scan QR codes (no camera, technical issues)",
+        "probability": "LOW",
+        "impact": "LOW",
+        "severity": "LOW",
+        "mitigation": "Bot also sends .conf file as document (can be imported manually)",
+        "contingency": "Document manual config import process for all platforms",
+        "linked_assumptions": []
+      }
+    ],
+
+    "experiment_plan": {
+      "phase_1_discovery": {
+        "duration": "3 days",
+        "activities": [
+          "Research current WireGuard blocking status in Russia (test from Russian IP)",
+          "Verify Telegram API accessibility in Russia (bot command test)",
+          "Review wg-easy API documentation for integration points",
+          "Prototype Telegram bot basic commands (start, request)"
+        ],
+        "success_criteria": [
+          "WireGuard connection works from Russian IP",
+          "Telegram bot responds from Russian IP",
+          "wg-easy API supports programmatic client management"
+        ],
+        "go_no_go": "If A1 or A2 fails, STOP and pivot to alternative solution"
+      },
+      "phase_2_prototype": {
+        "duration": "2 weeks",
+        "activities": [
+          "Implement CORE features (VPN-001 to VPN-008)",
+          "Test Docker Compose integration (isolated environment)",
+          "Validate bot commands with test users",
+          "Measure resource usage under load"
+        ],
+        "success_criteria": [
+          "All CORE acceptance criteria pass",
+          "Installation time <10 minutes",
+          "Resource usage within limits (RAM <1GB, CPU <1 core)",
+          "n8n services remain healthy"
+        ],
+        "go_no_go": "If A6 fails (n8n breaks), STOP and redesign architecture"
+      },
+      "phase_3_pilot": {
+        "duration": "1 week",
+        "activities": [
+          "Deploy to production-like environment",
+          "Onboard 5 test users (Russian IPs)",
+          "Monitor VPN uptime and connection success rate",
+          "Collect user feedback on installation and usage"
+        ],
+        "success_criteria": [
+          ">90% first-connection success rate",
+          ">95% VPN uptime",
+          "No critical bugs reported",
+          "Positive user feedback (ease of use)"
+        ],
+        "go_no_go": "If success rate <80% or critical bugs found, FIX before MVP release"
+      }
+    },
+
+    "evidence_sources": [
+      {
+        "source": "WireGuard official documentation",
+        "url": "https://www.wireguard.com/",
+        "evidence_level": "A",
+        "relevance": "Technical specifications, encryption standards, client compatibility"
+      },
+      {
+        "source": "wg-easy GitHub repository",
+        "url": "https://github.com/wg-easy/wg-easy",
+        "evidence_level": "A",
+        "relevance": "Docker image, API documentation, known issues"
+      },
+      {
+        "source": "python-telegram-bot documentation",
+        "url": "https://python-telegram-bot.readthedocs.io/",
+        "evidence_level": "A",
+        "relevance": "Bot API, command handling, message sending"
+      },
+      {
+        "source": "Russian internet censorship reports (2024)",
+        "url": "https://ooni.org/",
+        "evidence_level": "B",
+        "relevance": "Current blocking methods, VPN protocol detection, Telegram accessibility"
+      },
+      {
+        "source": "n8n-installer project structure",
+        "url": "file:///home/volk/vibeprojects/n8n-installer/",
+        "evidence_level": "A",
+        "relevance": "Existing docker-compose.yml, installation scripts, network configuration"
+      }
+    ],
+
+    "pivot_triggers": [
+      {
+        "trigger": "WireGuard blocked by Russian DPI (A1 fails)",
+        "pivot_action": "Migrate to obfuscated VPN protocol (OpenVPN + obfs4) or commercial VPN service",
+        "decision_criteria": "If >50% of test connections fail from Russian IPs"
+      },
+      {
+        "trigger": "Telegram bot blocked in Russia (A2 fails)",
+        "pivot_action": "Remove bot dependency, use wg-easy UI only + manual config distribution",
+        "decision_criteria": "If bot API unreachable from Russian IPs for >48 hours"
+      },
+      {
+        "trigger": "n8n services break after VPN install (A6 fails)",
+        "pivot_action": "Separate VPN to standalone server or redesign network architecture",
+        "decision_criteria": "If any n8n service experiences downtime or errors after VPN installation"
+      },
+      {
+        "trigger": "Installation time exceeds 15 minutes (A7 fails significantly)",
+        "pivot_action": "Pre-build custom Docker images with embedded config + reduce user inputs",
+        "decision_criteria": "If >50% of test installations take >15 minutes"
+      }
+    ],
+
+    "hypothesis_validation_status": {
+      "validated": false,
+      "validation_date": null,
+      "validation_method": null,
+      "outcome": null,
+      "learnings": [],
+      "next_iteration": null
+    }
+  }
+}

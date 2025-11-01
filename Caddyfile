@@ -130,6 +130,14 @@ https://{$NEO4J_HOSTNAME}:7687 {
     reverse_proxy paddleocr:8080
 }
 
+# WireGuard Easy (VPN Management UI)
+{$WG_EASY_HOSTNAME} {
+    basic_auth {
+        {$WG_EASY_USERNAME} {$WG_EASY_PASSWORD_HASH}
+    }
+    reverse_proxy wg-easy:51821
+}
+
 import /etc/caddy/addons/*.conf
 
 # # SearXNG

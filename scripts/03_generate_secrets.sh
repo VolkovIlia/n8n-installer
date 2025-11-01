@@ -58,6 +58,9 @@ declare -A VARS_TO_GENERATE=(
     # WAHA (WhatsApp HTTP API)
     ["WAHA_DASHBOARD_PASSWORD"]="password:32"
     ["WHATSAPP_SWAGGER_PASSWORD"]="password:32"
+    # VPN (WireGuard + Telegram Bot)
+    ["WG_PASSWORD"]="secret:48" # WireGuard wg-easy UI password (36 bytes -> 48 chars base64)
+    ["WG_EASY_PASSWORD"]="password:32" # Caddy basic auth password for wg-easy (if using reverse proxy)
 )
 
 # Initialize existing_env_vars and attempt to read .env if it exists
@@ -596,6 +599,18 @@ if [[ -z "$FINAL_LT_HASH" && -n "$LT_PLAIN_PASS" ]]; then
     fi
 fi
 _update_or_add_env_var "LT_PASSWORD_HASH" "$FINAL_LT_HASH"
+
+# --- WG_EASY (Caddy basic auth) ---
+WG_EASY_PLAIN_PASS="${generated_values["WG_EASY_PASSWORD"]}"
+FINAL_WG_EASY_HASH="${generated_values[WG_EASY_PASSWORD_HASH]}"
+if [[ -z "$FINAL_WG_EASY_HASH" && -n "$WG_EASY_PLAIN_PASS" ]]; then
+    NEW_HASH=$(_generate_and_get_hash "$WG_EASY_PLAIN_PASS")
+    if [[ -n "$NEW_HASH" ]]; then
+        FINAL_WG_EASY_HASH="$NEW_HASH"
+        generated_values["WG_EASY_PASSWORD_HASH"]="$NEW_HASH"
+    fi
+fi
+_update_or_add_env_var "WG_EASY_PASSWORD_HASH" "$FINAL_WG_EASY_HASH"
 
 if [ $? -eq 0 ]; then # This $? reflects the status of the last mv command from the last _update_or_add_env_var call.
     # For now, assuming if we reached here and mv was fine, primary operations were okay.
