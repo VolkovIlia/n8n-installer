@@ -254,6 +254,9 @@ services:
       - SUPABASE_HOSTNAME=${SUPABASE_HOSTNAME}
       - WEAVIATE_HOSTNAME=${WEAVIATE_HOSTNAME}
       - WEBUI_HOSTNAME=${WEBUI_HOSTNAME}
+      - WG_EASY_HOSTNAME=${WG_EASY_HOSTNAME}
+      - WG_EASY_USERNAME=${WG_EASY_USERNAME}
+      - WG_EASY_PASSWORD_HASH=${WG_EASY_PASSWORD_HASH}
     cap_drop:
       - ALL
     cap_add:
@@ -263,6 +266,9 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
+    networks:
+      - default
+      - vpn_network
 
   cloudflared:
     image: cloudflare/cloudflared:latest

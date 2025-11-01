@@ -282,18 +282,35 @@ if [ $vpn_selected -eq 1 ]; then
 
 Without Caddy: http://${WG_HOST:-your-ip}:51821 (direct HTTP)
 With Caddy: https://vpn.yourdomain.com (automatic HTTPS)" "no"; then
-            WG_EASY_HOSTNAME_INPUT=$(wt_input "WG-Easy Domain" "Enter domain for wg-easy:
+
+            # Loop until valid subdomain is entered
+            while true; do
+                WG_EASY_HOSTNAME_INPUT=$(wt_input "WG-Easy Domain" "Enter domain for wg-easy:
 
 Suggested: ${DEFAULT_WG_HOSTNAME:-vpn.yourdomain.com}
 Leave empty to skip Caddy integration and use direct HTTP access only." "$DEFAULT_WG_HOSTNAME") || true
 
-            if [ -n "$WG_EASY_HOSTNAME_INPUT" ]; then
+                # If empty, skip Caddy integration
+                if [ -z "$WG_EASY_HOSTNAME_INPUT" ]; then
+                    log_info "Caddy integration skipped - wg-easy will be accessible via direct HTTP only."
+                    break
+                fi
+
+                # Validate that WG_EASY_HOSTNAME is NOT the same as USER_DOMAIN_NAME
+                if [ -n "$USER_DOMAIN" ] && [ "$WG_EASY_HOSTNAME_INPUT" = "$USER_DOMAIN" ]; then
+                    log_error "WG_EASY_HOSTNAME cannot be the same as USER_DOMAIN_NAME ($USER_DOMAIN)" >&2
+                    log_error "Please use a subdomain like: vpn.$USER_DOMAIN or wg.$USER_DOMAIN" >&2
+                    echo >&2
+                    # Loop continues - prompt again
+                    continue
+                fi
+
+                # Valid subdomain entered
                 write_env_var "WG_EASY_HOSTNAME" "$WG_EASY_HOSTNAME_INPUT"
                 log_success "WG-Easy domain saved: $WG_EASY_HOSTNAME_INPUT (Caddy will handle HTTPS)"
                 log_info "WG_EASY_USERNAME and WG_EASY_PASSWORD will be auto-generated in next step."
-            else
-                log_info "Caddy integration skipped - wg-easy will be accessible via direct HTTP only."
-            fi
+                break
+            done
         else
             log_info "Caddy integration skipped - wg-easy will be accessible via direct HTTP only."
         fi
